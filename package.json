@@ -1,0 +1,26 @@
+{
+  "name": "tournamentscoretracker",
+  "version": "1.0.0",
+  "description": "An osu! score tracker that works in discord and able to scan images to track scores.",
+  "main": "index.js",
+  "scripts": {
+    "start": "git pull && npm i && node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Coderbora/TournamentScoreTracker.git"
+  },
+  "author": "Coderbora",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Coderbora/TournamentScoreTracker/issues"
+  },
+  "homepage": "https://github.com/Coderbora/TournamentScoreTracker#readme",
+  "dependencies": {
+    "discord.js": "^12.4.0",
+    "luxon": "^1.25.0",
+    "request-image-size": "^2.1.0",
+    "tesseract.js": "^2.1.4"
+  }
+}
