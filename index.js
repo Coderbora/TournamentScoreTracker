@@ -64,12 +64,13 @@ function checkCommand(msg) {
                 argv,
                 client,
                 infoscheduler,
-                digitscheduler
+                digitscheduler,
+                config
             });
 
             Promise.resolve(promise).then(response => {
                 if(response){
-                    let message_promise, edit_promise, replace_promise;
+                    let message_promise, edit_promise, reaction_array, replace_promise;
 
                     if(typeof response === 'object' && 'edit_promise' in response){
                         ({edit_promise} = response);
@@ -79,6 +80,11 @@ function checkCommand(msg) {
                     if(typeof response === 'object' && 'replace_promise' in response){
                         ({replace_promise} = response);
                         delete response.replace_promise;
+                    }
+
+                    if(typeof response === 'object' && 'reaction_array' in response){
+                        ({reaction_array} = response);
+                        delete response.reaction_array;
                     }
 
                     message_promise = msg.channel.send(response);
@@ -103,6 +109,33 @@ function checkCommand(msg) {
                                 }).finally(() => {
                                 message.delete();
                             });
+                        }
+
+                        if(reaction_array) {
+                            let reactions = reaction_array.map(a => a.emoji);
+
+                            const filter = (reaction, user) => {
+                                return reactions.includes(reaction.emoji.name) && user.id === msg.author.id;
+                            };
+
+                            reactions.forEach(async reaction => {
+                                await message.react(reaction)
+                            })
+
+                            message.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
+                                .then(collected => {
+                                    const reaction = collected.first();
+                                    Promise.resolve(reaction_array.find(r => r.emoji === reaction.emoji.name).call())
+                                        .then(obj => {
+                                            if (typeof obj === 'object' && 'edit_promise' in obj)
+                                                message.edit(obj.edit_promise).catch(console.error);
+
+                                            message.reactions.removeAll()
+                                        })
+                                })
+                                .catch(() => {
+                                    message.reactions.removeAll();
+                                });
                         }
                     }).catch(err => {
                         msg.channel.send(`Couldn't run command: \`${err}\``);

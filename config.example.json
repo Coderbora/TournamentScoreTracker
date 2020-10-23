@@ -1,6 +1,7 @@
 {
   "token": "",
   "prefix": ">",
+  "accent_color": [180, 161, 255],
 
   "debug": true
 }
