@@ -87,7 +87,7 @@ module.exports = {
                             Number(results[1].data.text);
 
                         if (isNaN(data.score))
-                            reject("Failed to read your score." +
+                            reject("Failed to read your score. " +
                                 "Please upload your replay instead of uploading screenshot.")
 
                         let embed = {
@@ -131,36 +131,48 @@ module.exports = {
 
                         resolve({
                             embed,
-                            reaction_array: [
-                                {
-                                    emoji: "✅",
-                                    call: () => {
-                                        return new Promise((resolve) => {
-                                            embed.footer.text = `Accepted by ${msg.author.username}`;
-                                            embed.timestamp = new Date();
-                                            embed.color = [0, 255, 0];
-                                            resolve({
-                                                edit_promise : {embed}
+                            reaction: {
+                                reactions: [
+                                    {
+                                        emoji: "✅",
+                                        call: () => {
+                                            return new Promise((resolve) => {
+                                                embed.footer.text = `Accepted by ${msg.author.username}`;
+                                                embed.timestamp = new Date();
+                                                embed.color = [0, 255, 0];
+                                                resolve({
+                                                    edit_promise : {embed}
+                                                })
                                             })
-                                        })
-                                    }
-                                },
-                                {
-                                    emoji: "❌",
-                                    call: () => {
-                                        return new Promise((resolve) => {
-                                            embed.footer.text = `Declined by ${msg.author.username}`;
-                                            embed.timestamp = new Date();
-                                            embed.color = [255, 0, 0];
-                                            resolve({
-                                                edit_promise : {embed}
+                                        }
+                                    },
+                                    {
+                                        emoji: "❌",
+                                        call: () => {
+                                            return new Promise((resolve) => {
+                                                embed.footer.text = `Declined by ${msg.author.username}`;
+                                                embed.timestamp = new Date();
+                                                embed.color = [255, 0, 0];
+                                                resolve({
+                                                    edit_promise : {embed}
+                                                })
                                             })
-                                        })
+                                        }
                                     }
+                                ],
+                                timeout: () => {
+                                    return new Promise((resolve) => {
+                                        embed.footer.text = `Operation timed out.`;
+                                        embed.timestamp = new Date();
+                                        embed.color = [255, 0, 0];
+                                        resolve({
+                                            edit_promise : {embed}
+                                        })
+                                    })
                                 }
-                            ]
+                            }
                         })
-                    } else reject("Failed to parse beatmap title data." +
+                    } else reject("Failed to parse beatmap title data. " +
                         "Please upload your replay instead of uploading screenshot.")
                 }).catch(err => reject(err))
             }

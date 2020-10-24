@@ -70,7 +70,7 @@ function checkCommand(msg) {
 
             Promise.resolve(promise).then(response => {
                 if(response){
-                    let message_promise, edit_promise, reaction_array, replace_promise;
+                    let message_promise, edit_promise, reaction, replace_promise;
 
                     if(typeof response === 'object' && 'edit_promise' in response){
                         ({edit_promise} = response);
@@ -82,9 +82,9 @@ function checkCommand(msg) {
                         delete response.replace_promise;
                     }
 
-                    if(typeof response === 'object' && 'reaction_array' in response){
-                        ({reaction_array} = response);
-                        delete response.reaction_array;
+                    if(typeof response === 'object' && 'reaction' in response){
+                        ({reaction} = response);
+                        delete response.reaction;
                     }
 
                     message_promise = msg.channel.send(response);
@@ -111,7 +111,8 @@ function checkCommand(msg) {
                             });
                         }
 
-                        if(reaction_array) {
+                        if(reaction) {
+                            let reaction_array = reaction.reactions;
                             let reactions = reaction_array.map(a => a.emoji);
 
                             const filter = (reaction, user) => {
@@ -134,7 +135,12 @@ function checkCommand(msg) {
                                         })
                                 })
                                 .catch(() => {
-                                    message.reactions.removeAll();
+                                    Promise.resolve(reaction.timeout()).then(obj => {
+                                        if (typeof obj === 'object' && 'edit_promise' in obj)
+                                            message.edit(obj.edit_promise).catch(console.error);
+
+                                        message.reactions.removeAll()
+                                    })
                                 });
                         }
                     }).catch(err => {
