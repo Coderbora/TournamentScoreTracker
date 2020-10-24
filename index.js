@@ -7,6 +7,7 @@ const { DateTime } = require("luxon");
 const { createWorker, createScheduler } = require('tesseract.js');
 const Discord = require("discord.js");
 const client = new Discord.Client();
+const helper = require('./helper.js');
 
 const infoworker = createWorker();
 const infoscheduler = createScheduler();
@@ -65,7 +66,8 @@ function checkCommand(msg) {
                 client,
                 infoscheduler,
                 digitscheduler,
-                config
+                config,
+                helper
             });
 
             Promise.resolve(promise).then(response => {
@@ -167,6 +169,7 @@ client.on("message", msg => {
 });
 
 client.on("ready", () => {
+    helper.init(config.osu_api_key);
     console.log(`Logged in as ${client.user.tag}!`);
 
 });

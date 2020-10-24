@@ -1,5 +1,7 @@
 {
   "token": "",
+  "osu_api_key": "",
+
   "prefix": ">",
   "accent_color": [180, 161, 255],
 
