@@ -3,8 +3,8 @@ const fs = require('fs');
 
 const config = require('./config.json');
 
-const { DateTime } = require("luxon");
-const { createWorker, createScheduler } = require('tesseract.js');
+const {DateTime} = require("luxon");
+const {createWorker, createScheduler} = require('tesseract.js');
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const helper = require('./helper.js');
@@ -33,11 +33,11 @@ let commands = [];
 const commandsDir = path.resolve(__dirname, 'commands');
 
 fs.readdir(commandsDir, (err, items) => {
-    if(err)
+    if (err)
         throw "Unable to read commands folder";
 
     items.forEach(item => {
-        if(path.extname(item) === '.js'){
+        if (path.extname(item) === '.js') {
             let command = require(path.resolve(commandsDir, item));
             if (!Array.isArray(command.command))
                 command.command = [command.command]
@@ -47,10 +47,10 @@ fs.readdir(commandsDir, (err, items) => {
 });
 
 function checkCommand(msg) {
-    if(!msg.content.startsWith(config.prefix))
+    if (!msg.content.startsWith(config.prefix))
         return false;
 
-    if(msg.author.bot)
+    if (msg.author.bot)
         return false;
 
     const regex = new RegExp('"[^"]+"|[\\S]+', 'g');
@@ -63,8 +63,8 @@ function checkCommand(msg) {
 
     let command = commands.find(c => c.command.includes(argv[0]))
 
-    if(command) {
-        if(command.call && typeof command.call === 'function'){
+    if (command) {
+        if (command.call && typeof command.call === 'function') {
             let promise = command.call({
                 msg,
                 argv,
@@ -76,22 +76,27 @@ function checkCommand(msg) {
             });
 
             Promise.resolve(promise).then(response => {
-                if(response){
-                    let message_promise, edit_promise, reaction, replace_promise;
+                if (response) {
+                    let message_promise, edit_promise, reaction, replace_promise, page;
 
-                    if(typeof response === 'object' && 'edit_promise' in response){
+                    if (typeof response === 'object' && 'edit_promise' in response) {
                         ({edit_promise} = response);
                         delete response.edit_promise;
                     }
 
-                    if(typeof response === 'object' && 'replace_promise' in response){
+                    if (typeof response === 'object' && 'replace_promise' in response) {
                         ({replace_promise} = response);
                         delete response.replace_promise;
                     }
 
-                    if(typeof response === 'object' && 'reaction' in response){
+                    if (typeof response === 'object' && 'reaction' in response) {
                         ({reaction} = response);
                         delete response.reaction;
+                    }
+
+                    if (typeof response === 'object' && 'page' in response) {
+                        ({page} = response);
+                        delete response.page;
                     }
 
                     message_promise = msg.channel.send(response);
@@ -106,10 +111,10 @@ function checkCommand(msg) {
                         let edit_promise = responses[1];
                         let replace_promise = responses[2];
 
-                        if(edit_promise)
+                        if (edit_promise)
                             message.edit(edit_promise).catch(console.error);
 
-                        if(replace_promise){
+                        if (replace_promise) {
                             msg.channel.send(replace_promise)
                                 .catch(err => {
                                     msg.channel.send(`Couldn't run command: \`${err}\``);
@@ -118,7 +123,7 @@ function checkCommand(msg) {
                             });
                         }
 
-                        if(reaction) {
+                        if (reaction) {
                             let reaction_array = reaction.reactions;
                             let reactions = reaction_array.map(a => a.emoji);
 
@@ -130,7 +135,7 @@ function checkCommand(msg) {
                                 await message.react(reaction)
                             })
 
-                            message.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
+                            message.awaitReactions(filter, {max: 1, time: 60000, errors: ['time']})
                                 .then(collected => {
                                     const reaction = collected.first();
                                     Promise.resolve(reaction_array.find(r => r.emoji === reaction.emoji.name).call())
@@ -150,12 +155,28 @@ function checkCommand(msg) {
                                     })
                                 });
                         }
+
+                        if (page) {
+                            message.react('⬅️').then(() => message.react('➡️'))
+                            const collector = message.createReactionCollector(
+                                (reaction, user) => ['⬅️', '➡️'].includes(reaction.emoji.name) && user.id === msg.author.id,
+                                {time: 60000}
+                            )
+                            collector.on('collect', reaction => {
+                                message.reactions.removeAll().then(() => {
+                                    message.edit(reaction.emoji.name === '⬅️' ? page.back() : page.fwd())
+                                    message.react('⬅️').then(() => message.react('➡️'))
+                                })
+                            })
+                            collector.on('end', () => message.reactions.removeAll());
+
+                        }
                     }).catch(err => {
                         msg.channel.send(`Couldn't run command: \`${err}\``);
                     });
                 }
             }).catch(err => {
-                if(typeof err === 'object')
+                if (typeof err === 'object')
                     msg.channel.send(err);
                 else
                     msg.channel.send(`Couldn't run command: \`${err}\``);
@@ -169,7 +190,7 @@ function checkCommand(msg) {
 client.on("message", msg => {
     checkCommand(msg)
 
-    if(config.debug)
+    if (config.debug)
         console.log(`[${DateTime.local().toUTC()}] ${msg.author.tag} : ${msg.content}`)
 });
 

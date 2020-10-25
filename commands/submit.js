@@ -1,5 +1,6 @@
 const requestImageSize = require('request-image-size')
 const {DateTime} = require("luxon");
+const stringSimilarity = require('string-similarity');
 
 const fs = require('fs')
 const path = require('path')
@@ -134,7 +135,7 @@ function formatResolve(data, msg, config, helper) {
 }
 
 module.exports = {
-    command: ["score", "submit", "sb"],
+    command: ["submit", "sb", "s"],
     call: obj => {
         return new Promise(async (resolve, reject) => {
             let {argv, msg, infoscheduler, digitscheduler, config, helper} = obj;
@@ -181,7 +182,8 @@ module.exports = {
 
                         let similar_map = helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]]
                             .slice(0).sort((a, b) => {
-                                return helper.string_similarity(b["map"], data.map) - helper.string_similarity(a["map"], data.map)
+                                    return stringSimilarity.compareTwoStrings(b["map"], data.map)
+                                        - stringSimilarity.compareTwoStrings(a["map"], data.map)
                             })[0];
 
                         data.map = similar_map["map"]

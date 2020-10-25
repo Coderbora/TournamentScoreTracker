@@ -75,19 +75,6 @@ module.exports = {
 
     },
 
-    string_similarity(a, b) {
-        let equivalency = 0;
-        let minLength = (a.length > b.length) ? b.length : a.length;
-        let maxLength = (a.length < b.length) ? b.length : a.length;
-        for(let i = 0; i < minLength; i++) {
-            if(a[i] === b[i]) {
-                equivalency++;
-            }
-        }
-
-        return equivalency / maxLength;
-    },
-
     parse_beatmap_url: function(beatmap_url){
         if(beatmap_url.startsWith('<') && beatmap_url.endsWith('>'))
             beatmap_url = beatmap_url.substring(1, beatmap_url.length - 1);
