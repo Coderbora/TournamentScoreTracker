@@ -53,7 +53,12 @@ function checkCommand(msg) {
     if(msg.author.bot)
         return false;
 
-    let argv = msg.content.split(' ');
+    const regex = new RegExp('"[^"]+"|[\\S]+', 'g');
+    const argv = [];
+    msg.content.match(regex).forEach(element => {
+        if (!element) return;
+        return argv.push(element.replace(/"/g, ''));
+    });
     argv[0] = argv[0].substr(config.prefix.length);
 
     let command = commands.find(c => c.command.includes(argv[0]))

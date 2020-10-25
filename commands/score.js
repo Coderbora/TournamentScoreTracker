@@ -1,5 +1,5 @@
 const requestImageSize = require('request-image-size')
-const { DateTime } = require("luxon");
+const {DateTime} = require("luxon");
 
 const fs = require('fs')
 const path = require('path')
@@ -48,7 +48,7 @@ function buildSettings(w, h) {
     return scaleRectangles(JSON.parse(JSON.stringify(default_settings)), w, h)
 }
 
-function formatResolve(data, msg, config) {
+function formatResolve(data, msg, config, helper) {
     let embed = {
         color: config.accent_color,
         title: "Confirm the action",
@@ -98,6 +98,7 @@ function formatResolve(data, msg, config) {
                             embed.footer.text = `Accepted by ${msg.author.username}`;
                             embed.timestamp = new Date();
                             embed.color = [0, 255, 0];
+                            helper.add_score(msg, data);
                             resolve({
                                 edit_promise: {embed}
                             })
@@ -138,13 +139,11 @@ module.exports = {
         return new Promise(async (resolve, reject) => {
             let {argv, msg, infoscheduler, digitscheduler, config, helper} = obj;
 
-            let data = {
-                player: "",
-                map: "",
-                mapper: "",
-                date: "",
-                score: ""
-            }
+            let data = {};
+
+            let guild_stage = helper.active_stage[msg.guild.id]
+            if (!guild_stage)
+                reject("Please set an active stage.")
 
             if ((msg.attachments.size > 0 && msg.attachments.first().name.match(/[^/]+(jpg|jpeg|png)$/))
                 || (argv[1] && validURL(argv[1]))) {
@@ -174,13 +173,21 @@ module.exports = {
                         data.date = title.match(new RegExp("Played by " + data.player + " on (.*)."))[1];
                         data.score = results[1].data.text.length > 7 ?
                             Number(results[1].data.text.substring(results[1].data.text.length - 8)) :
-                            Number(results[1].data.text);
+                            Number(results[1].data.text); // preventing extra digits for score v2
 
                         if (isNaN(data.score))
                             reject("Failed to read your score. " +
                                 "Please upload your replay instead of uploading screenshot.")
 
-                        resolve(formatResolve(data, msg, config))
+                        let similar_map = helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]]
+                            .slice(0).sort((a, b) => {
+                                return helper.string_similarity(b["map"], data.map) - helper.string_similarity(a["map"], data.map)
+                            })[0];
+
+                        data.map = similar_map["map"]
+                        data.id = similar_map["id"]
+
+                        resolve(formatResolve(data, msg, config, helper))
 
                     } else reject("Failed to parse beatmap title data. " +
                         "Please upload your replay instead of uploading screenshot.")
@@ -195,19 +202,19 @@ module.exports = {
                     data.player = replay.playerName;
                     data.date = DateTime.fromISO(replay.timestamp.toISOString())
                         .toFormat("d.MM.yyyy HH:mm:ss");
-                    helper.get_beatmap({ h: replay["beatmapMD5"] }).then(maplist => {
+                    helper.get_beatmap({h: replay["beatmapMD5"]}).then(maplist => {
                         fs.unlinkSync(replayPath)
                         if (maplist.data.length > 0) {
                             let map = maplist.data[0];
                             data.mapper = map["creator"];
-                            data.map = `${map["artist"]} - ${map["title"]} [${map["version"]}]`
-                            resolve(formatResolve(data, msg, config))
-                        }
-                        else
+                            data.map = `${map["artist"]} - ${map["title"]} [${map["version"]}]`;
+                            data.id = map["beatmap_id"];
+                            resolve(formatResolve(data, msg, config, helper))
+                        } else
                             reject(`Failed to find this replay's map in osu!. Please try saving another replay.`)
                     })
                 }).catch(err => reject(err))
-            } else reject("Please either specify the image or upload your replay.")
+            } else reject("Please either specify the image or upload your replay properly (>2KB).")
         })
     }
-}
+    }

@@ -21,7 +21,10 @@
     "axios": "^0.21.0",
     "discord.js": "^12.4.0",
     "luxon": "^1.25.0",
+    "node-localstorage": "^2.1.6",
+    "on-change": "^2.1.4",
     "osureplayparser": "^1.0.1",
+    "parse-github-url": "^1.0.2",
     "request-image-size": "^2.1.0",
     "tesseract.js": "^2.1.4"
   }
