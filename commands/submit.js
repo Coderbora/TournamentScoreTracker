@@ -136,6 +136,8 @@ function formatResolve(data, msg, config, helper) {
 
 module.exports = {
     command: ["submit", "sb", "s"],
+    description: "Upload your score into database.",
+    usage: "[url] or upload ranking screen/replay",
     call: obj => {
         return new Promise(async (resolve, reject) => {
             let {argv, msg, infoscheduler, digitscheduler, config, helper} = obj;

@@ -28,6 +28,8 @@ let currentIndex = 0;
 
 module.exports = {
     command: ["list", "scores", "score"],
+    description: "List scores for a map.",
+    usage: "[map name] (player)",
     call: obj => {
         return new Promise((resolve, reject) => {
             let {argv, msg, helper, config} = obj;

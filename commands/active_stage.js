@@ -1,5 +1,7 @@
 module.exports = {
     command: ["activestage"],
+    description: "Show / Change the active stage for this guild.",
+    usage: "[tournament] [stage]",
     requiredPerms: ["MANAGE_GUILD"],
     call: obj => {
         return new Promise((resolve, reject) => {

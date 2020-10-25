@@ -18,6 +18,12 @@ function get_lines_between(arr, beginning, ending) {
 module.exports = {
     command: ["mappool", "pool"],
     requiredPerms: ["MANAGE_GUILD"],
+    description: `Update and list tournaments/stages/mappools
+    mappool add tournament stage beatmap_url
+    mappool remove [tournament] [stage] [map]
+    mappool list [tournament] [stage]
+    mappool github tournament stage github_url -> Stage must be same in Github.`,
+    usage: "[add/remove/list/github] [tournament] [stage] (url)",
     call: obj => {
         return new Promise((resolve, reject) => {
             let {argv, msg, helper, config} = obj;

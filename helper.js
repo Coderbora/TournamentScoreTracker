@@ -6,6 +6,8 @@ const fs = require('fs')
 const path = require('path')
 const onChange = require('on-change');
 
+const config = require("./config.json");
+
 let osu_api;
 
 function setItem (item, data) {
@@ -40,14 +42,17 @@ active_stage = onChange(active_stage, () => {
     setItem("active_stage", JSON.stringify(active_stage))
 })
 
+let commands = []
+
 module.exports = {
-    init(osu_api_key) {
+    init(osu_api_key, cmds) {
         osu_api = axios.create({
             baseURL: 'https://osu.ppy.sh/api',
             params: {
                 k: osu_api_key
             }
         });
+        commands = cmds;
     },
 
     database,
@@ -125,5 +130,44 @@ module.exports = {
 
     get_beatmap(req) {
         return osu_api.get("/get_beatmaps", { params: req })
+    },
+
+    get_all_commands() {
+        let description = "";
+        commands.forEach(cmd => {
+            description += `\n**${cmd.command.map((a => { return config.prefix + a })).join(", ")}** ► ${cmd.description.split('\n')[0]}`
+        })
+        return {
+            color: config.accent_color,
+            title: "List of all available commands",
+            description
+        }
+    },
+
+    get_command_embed(cmd){
+        return new Promise((resolve, reject) => {
+            let command = commands.find(c => c.command.includes(cmd));
+            if (command) {
+                let fields = []
+                fields.push({
+                    name: "Commands",
+                    value: "```" + command.command.map((a => { return config.prefix + a })).join(", ") + "```"
+                })
+                fields.push({
+                    name: "Description",
+                    value: command.description
+                })
+                fields.push({
+                    name: "Usage",
+                    value: "```" + config.prefix + command.command[0] + " " + command.usage + "```"
+                })
+                resolve({
+                    color: config.accent_color,
+                    fields
+                })
+            }
+            else
+                reject("Could not match any command.")
+        })
     }
 }

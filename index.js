@@ -195,7 +195,7 @@ client.on("message", msg => {
 });
 
 client.on("ready", () => {
-    helper.init(config.osu_api_key);
+    helper.init(config.osu_api_key, commands);
     console.log(`Logged in as ${client.user.tag}!`);
 
 });
