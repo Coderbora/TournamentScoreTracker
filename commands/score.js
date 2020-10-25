@@ -209,6 +209,10 @@ module.exports = {
                             data.mapper = map["creator"];
                             data.map = `${map["artist"]} - ${map["title"]} [${map["version"]}]`;
                             data.id = map["beatmap_id"];
+
+                            if(!helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]].find(m => m["id"] === data.id))
+                                reject(`Failed to find this map in mappool.`)
+
                             resolve(formatResolve(data, msg, config, helper))
                         } else
                             reject(`Failed to find this replay's map in osu!. Please try saving another replay.`)
