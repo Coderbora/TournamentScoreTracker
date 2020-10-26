@@ -5,7 +5,7 @@ function get_lines_between(arr, beginning, ending) {
     let beginning_line = arr.length-1;
     let ending_line = arr.length-1;
     for (let l = 0; l<arr.length; l++) {
-        if (beginning_line !== arr.length-1 && arr[l].startsWith(ending)) {
+        if (beginning_line !== arr.length-1 && ending_line === arr.length-1 && arr[l].startsWith(ending)) {
             ending_line = l;
         }
         if (arr[l].startsWith(beginning)) {
@@ -15,15 +15,66 @@ function get_lines_between(arr, beginning, ending) {
     return arr.slice(beginning_line, ending_line);
 }
 
+function add_url_array(maps, tournament, stage, helper, msg) {
+    return new Promise((resolve, reject) => {
+        let promises = [];
+        let add_array = [];
+
+        maps.forEach(map_url => {
+            let beatmap_id = helper.parse_beatmap_url(map_url)
+            if (beatmap_id) {
+                if (!helper.database.hasOwnProperty(msg.guild.id))
+                    helper.database[msg.guild.id] = {}
+
+                if (!helper.database[msg.guild.id].hasOwnProperty(tournament))
+                    helper.database[msg.guild.id][tournament] = {}
+
+                if (!helper.database[msg.guild.id][tournament].hasOwnProperty(stage)) {
+                    helper.database[msg.guild.id][tournament][stage] = []
+                    helper.active_stage[msg.guild.id] = [tournament, stage]
+                }
+
+                promises.push(helper.get_beatmap({b: beatmap_id}).then(response => {
+                    if (response.data.length > 0) {
+                        let beatmap = response.data[0];
+                        let map = `${beatmap["artist"]} - ${beatmap["title"]} [${beatmap["version"]}]`;
+
+                        if (!helper.database[msg.guild.id][tournament][stage].find(m => m["id"] === beatmap_id)) {
+                            add_array.push({
+                                id: beatmap_id,
+                                mapset_id: beatmap["beatmapset_id"],
+                                map,
+                                scores: []
+                            })
+                        }
+                    }
+                }))
+            }
+        })
+        if(promises.length > 0) {
+            Promise.all(promises).then(() => {
+                add_array.sort((a, b) => {
+                    return maps.findIndex(m => m.includes(a["id"])) - maps.findIndex(m => m.includes(b["id"]));
+                })
+                helper.database[msg.guild.id][tournament][stage] =
+                    helper.database[msg.guild.id][tournament][stage].concat(add_array);
+                resolve(add_array)
+            }).catch(err => reject(err))
+        } else reject("Cannot find any osu! beatmaps.")
+    })
+}
+
 module.exports = {
     command: ["mappool", "pool"],
     requiredPerms: ["MANAGE_GUILD"],
     description: `Update and list tournaments/stages/mappools
+    mappool -> list pool for active stage
     mappool add tournament stage beatmap_url
     mappool remove [tournament] [stage] [map]
     mappool list [tournament] [stage]
-    mappool github tournament stage github_url -> Stage must be same in Github.`,
-    usage: "[add/remove/list/github] [tournament] [stage] (url)",
+    mappool github tournament stage github_url -> Stage must be same in Github.
+    mappool txt tournament stage -> Attach .txt file with map urls.`,
+    usage: "[add/remove/list/github/txt] [tournament] [stage] (url)",
     call: obj => {
         return new Promise((resolve, reject) => {
             let {argv, msg, helper, config} = obj;
@@ -175,10 +226,8 @@ module.exports = {
                 let tournament = argv[2];
                 let stage = argv[3];
 
-                if((!tournament && !stage) && helper.active_stage.hasOwnProperty(msg.guild.id)) {
-                    tournament = helper.active_stage[msg.guild.id][0];
-                    stage = helper.active_stage[msg.guild.id][1];
-                }
+                if(!module.exports.requiredPerms.some(perm => msg.member.hasPermission(perm)))
+                    reject(`You must have ${module.exports.requiredPerms} perm to list all tournaments.`)
 
                 let description = "";
                 if(stage) {
@@ -216,6 +265,22 @@ module.exports = {
                     else {
                         reject(`The tournament ${tournament} is not found in database.`)
                     }
+                } else if (!stage && !tournament) {
+                    if (helper.database[msg.guild.id]) {
+                        Object.keys(helper.database[msg.guild.id]).forEach(tournament => {
+                            description += `\n ⮞ **${tournament}** - Total of **${Object.keys(helper.database[msg.guild.id][tournament]).length}** stages.`;
+                        })
+                        resolve({
+                            embed: {
+                                color: config.accent_color,
+                                title: `Tournament list for this server`,
+                                description,
+                                timestamp: new Date(),
+                            }
+                        })
+                    }
+                    else
+                        reject(`No tournaments found in database.`)
                 }
                 else {
                     reject("Cannot find anything to list.")
@@ -244,59 +309,84 @@ module.exports = {
                     let map_list = get_lines_between(pool, `### ${stage}`, "### ").join("\n");
                     let urlRegex = new RegExp(/((http|ftp|https):\/\/)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/g)
                     let maps = map_list.match(urlRegex);
-                    let promises = [];
-                    let add_array = [];
-                    let added = 0;
-                    maps.forEach(map_url => {
-                        let beatmap_id = helper.parse_beatmap_url(map_url)
-                        if (beatmap_id) {
-                            if (!helper.database.hasOwnProperty(msg.guild.id))
-                                helper.database[msg.guild.id] = {}
 
-                            if (!helper.database[msg.guild.id].hasOwnProperty(tournament))
-                                helper.database[msg.guild.id][tournament] = {}
-
-                            if (!helper.database[msg.guild.id][tournament].hasOwnProperty(stage)) {
-                                helper.database[msg.guild.id][tournament][stage] = []
-                                helper.active_stage[msg.guild.id] = [tournament, stage]
-                            }
-
-                            promises.push(helper.get_beatmap({b: beatmap_id}).then(response => {
-                                if (response.data.length > 0) {
-                                    let beatmap = response.data[0];
-                                    let map = `${beatmap["artist"]} - ${beatmap["title"]} [${beatmap["version"]}]`;
-
-                                    if (!helper.database[msg.guild.id][tournament][stage].find(m => m["id"] === beatmap_id)) {
-                                        add_array.push({
-                                            id: beatmap_id,
-                                            mapset_id: beatmap["beatmapset_id"],
-                                            map,
-                                            scores: []
-                                        })
-                                        added++;
-                                    }
+                    if (!maps || maps.length === 0)
+                        reject("No maps found with this filter.")
+                    else {
+                        add_url_array(maps, tournament, stage, helper, msg).then(arr => {
+                            resolve({
+                                embed: {
+                                    color: [0, 255, 0],
+                                    title: `${stage} ◄ ${tournament}`,
+                                    description: `Successfully **added** ${arr.length} map(s) to database!`,
+                                    timestamp: new Date(),
                                 }
-                            }))
+                            })
+                        }).catch(err => reject(err))
+                    }
+                })
+            } else if(action === "txt") {
+                let tournament = argv[2];
+                let stage = argv[3];
+
+                if(!module.exports.requiredPerms.some(perm => msg.member.hasPermission(perm)))
+                    reject(`You must have ${module.exports.requiredPerms} perm to add map.`)
+
+                if(!stage || !tournament) {
+                    reject("Please specify all parameters.")
+                }
+
+                if(msg.attachments.size > 0 && msg.attachments.first().name.match(/[^/]+(txt)$/)) {
+                    axios.get(msg.attachments.first().url).then(res => {
+                        let data = res.data;
+                        let urlRegex = new RegExp(/((http|ftp|https):\/\/)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)/g)
+                        let maps = data.match(urlRegex);
+
+                        if (!maps || maps.length === 0)
+                            reject("No maps urls found in this txt.")
+                        else {
+                            add_url_array(maps, tournament, stage, helper, msg).then(arr => {
+                                resolve({
+                                    embed: {
+                                        color: [0, 255, 0],
+                                        title: `${stage} ◄ ${tournament}`,
+                                        description: `Successfully **added** ${arr.length} map(s) to database!`,
+                                        timestamp: new Date(),
+                                    }
+                                })
+                            }).catch(err => reject(err))
                         }
                     })
-                    Promise.all(promises).then(() => {
-                        add_array.sort((a, b) => {
-                            return maps.findIndex(m => m.includes(a["id"])) - maps.findIndex(m => m.includes(b["id"]));
-                        })
-                        helper.database[msg.guild.id][tournament][stage] =
-                            helper.database[msg.guild.id][tournament][stage].concat(add_array);
-                        resolve({
-                            embed: {
-                                color: [0, 255, 0],
-                                title: `${stage} ◄ ${tournament}`,
-                                description: `Successfully **added** ${added} map(s) to database!`,
-                                timestamp: new Date(),
-                            }
-                        })
+                } else reject("Please upload an attachment that contains maps (.txt).")
+
+            } else if(action === "") {
+                let guild_stage = helper.active_stage[msg.guild.id]
+                if (!guild_stage)
+                    reject("Please set an active stage.")
+
+                let tournament = guild_stage[0];
+                let stage = guild_stage[1];
+                let description = "";
+
+                if (helper.database[msg.guild.id][tournament]
+                    && helper.database[msg.guild.id][tournament][stage]) {
+                    helper.database[msg.guild.id][tournament][stage].forEach(map => {
+                        let best = map["scores"].length > 0 ? map["scores"].sort((a,b) => {return b["score"]-a["score"]})[0] : 0;
+                        let highScore = best["score"] > 0 ? `- **${best["score"]}** by **${best["player"]}**` : "";
+                        description += `\n • [${map["map"]}](https://osu.ppy.sh/b/${map["id"]}) ${highScore}`;
                     })
-                })
+                    resolve({
+                        embed: {
+                            color: config.accent_color,
+                            title: `Map list of ${stage} ◄ ${tournament}`,
+                            description,
+                            timestamp: new Date(),
+                        }
+                    })
+                }
+
             } else {
-                reject("Please specify your action correctly (add, remove, list, github).")
+                reject("Please specify your action correctly (add, remove, list, github, txt).")
             }
         })
     }
