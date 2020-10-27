@@ -140,7 +140,7 @@ module.exports = {
     usage: "[url] or upload ranking screen/replay",
     call: obj => {
         return new Promise(async (resolve, reject) => {
-            let {argv, msg, infoscheduler, digitscheduler, config, helper} = obj;
+            let {argv, msg, ocr, config, helper} = obj;
 
             let data = {};
 
@@ -163,20 +163,20 @@ module.exports = {
                 let settings = buildSettings(dimensions.width, dimensions.height);
 
                 let jobs = [
-                    infoscheduler.addJob('recognize', url, {rectangle: settings.map_player_info}),
-                    digitscheduler.addJob('recognize', url, {rectangle: settings.score})
+                    ocr.detectText(url, "text", settings.map_player_info, [dimensions.width, dimensions.height]),
+                    ocr.detectText(url, "digit", settings.score, [dimensions.width, dimensions.height])
                 ]
 
                 Promise.all(jobs).then(results => {
-                    let title = results[0].data.text;
+                    let title = results[0];
                     if (title.match(/Played by (.*) on/) && title.match(/Beatmap by (.*)/) && title.match(/on (.*)./)) {
                         data.player = title.match(/Played by (.*) on/)[1];
                         data.map = title.split("\n")[0];
                         data.mapper = title.match(/Beatmap by (.*)/)[1];
                         data.date = title.match(new RegExp("Played by " + data.player + " on (.*)."))[1];
-                        data.score = results[1].data.text.length > 7 ?
-                            Number(results[1].data.text.substring(results[1].data.text.length - 8)) :
-                            Number(results[1].data.text); // preventing extra digits for score v2
+                        data.score = results[1].length > 7 ?
+                            Number(results[1].substring(results[1].length - 8)) :
+                            Number(results[1]); // preventing extra digits for score v2
 
                         if (isNaN(data.score))
                             reject("Failed to read your score. " +

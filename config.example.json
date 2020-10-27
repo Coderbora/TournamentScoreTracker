@@ -2,6 +2,8 @@
   "token": "",
   "osu_api_key": "",
 
+  "aws_parameters": {},
+
   "prefix": ">",
   "accent_color": [180, 161, 255],
 

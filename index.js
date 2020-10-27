@@ -4,30 +4,15 @@ const fs = require('fs');
 const config = require('./config.json');
 
 const {DateTime} = require("luxon");
-const {createWorker, createScheduler} = require('tesseract.js');
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const helper = require('./helper.js');
+const ocr = require('./ocr.js');
 
-const infoworker = createWorker();
-const infoscheduler = createScheduler();
-const digitworker = createWorker();
-const digitscheduler = createScheduler();
-
-(async () => {
-    await infoworker.load()
-    await infoworker.loadLanguage('eng')
-    await infoworker.initialize('eng');
-    infoscheduler.addWorker(infoworker);
-
-    await digitworker.load()
-    await digitworker.loadLanguage('eng')
-    await digitworker.initialize('eng');
-    await digitworker.setParameters({
-        tessedit_char_whitelist: '0123456789',
-    });
-    digitscheduler.addWorker(digitworker);
-})();
+if(config.aws_parameters)
+    ocr.init(config.aws_parameters);
+else
+    ocr.init()
 
 let commands = [];
 const commandsDir = path.resolve(__dirname, 'commands');
@@ -69,8 +54,7 @@ function checkCommand(msg) {
                 msg,
                 argv,
                 client,
-                infoscheduler,
-                digitscheduler,
+                ocr,
                 config,
                 helper
             });
