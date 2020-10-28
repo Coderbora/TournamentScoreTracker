@@ -42,7 +42,7 @@ module.exports = {
 
             let guild_stage = helper.active_stage[msg.guild.id];
             if (guild_stage) {
-                let similar_map = helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]]
+                let similar_map = helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]]["maps"]
                     .slice(0).sort((a, b) => {
                         return stringSimilarity.compareTwoStrings(b["map"], search_string)
                             - stringSimilarity.compareTwoStrings(a["map"], search_string)

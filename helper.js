@@ -104,11 +104,11 @@ module.exports = {
         return new Promise((resolve, reject) => {
             if(active_stage.hasOwnProperty(msg.guild.id)) {
                 let guild_stage = active_stage[msg.guild.id];
-                let mapIndex = database[msg.guild.id][guild_stage[0]][guild_stage[1]]
+                let mapIndex = database[msg.guild.id][guild_stage[0]][guild_stage[1]]["maps"]
                     .findIndex(m => m["id"] === data.id);
 
                 if (mapIndex > -1) {
-                    database[msg.guild.id][guild_stage[0]][guild_stage[1]][mapIndex]["scores"]
+                    database[msg.guild.id][guild_stage[0]][guild_stage[1]]["maps"][mapIndex]["scores"]
                         .push({
                             player: data.player,
                             date: data.date,

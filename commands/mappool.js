@@ -30,7 +30,9 @@ function add_url_array(maps, tournament, stage, helper, msg) {
                     helper.database[msg.guild.id][tournament] = {}
 
                 if (!helper.database[msg.guild.id][tournament].hasOwnProperty(stage)) {
-                    helper.database[msg.guild.id][tournament][stage] = []
+                    helper.database[msg.guild.id][tournament][stage] = {
+                        maps: []
+                    }
                     helper.active_stage[msg.guild.id] = [tournament, stage]
                 }
 
@@ -39,7 +41,7 @@ function add_url_array(maps, tournament, stage, helper, msg) {
                         let beatmap = response.data[0];
                         let map = `${beatmap["artist"]} - ${beatmap["title"]} [${beatmap["version"]}]`;
 
-                        if (!helper.database[msg.guild.id][tournament][stage].find(m => m["id"] === beatmap_id)) {
+                        if (!helper.database[msg.guild.id][tournament][stage]["maps"].find(m => m["id"] === beatmap_id)) {
                             add_array.push({
                                 id: beatmap_id,
                                 mapset_id: beatmap["beatmapset_id"],
@@ -56,8 +58,8 @@ function add_url_array(maps, tournament, stage, helper, msg) {
                 add_array.sort((a, b) => {
                     return maps.findIndex(m => m.includes(a["id"])) - maps.findIndex(m => m.includes(b["id"]));
                 })
-                helper.database[msg.guild.id][tournament][stage] =
-                    helper.database[msg.guild.id][tournament][stage].concat(add_array);
+                helper.database[msg.guild.id][tournament][stage]["maps"] =
+                    helper.database[msg.guild.id][tournament][stage]["maps"].concat(add_array);
                 resolve(add_array)
             }).catch(err => reject(err))
         } else reject("Cannot find any osu! beatmaps.")
@@ -102,7 +104,9 @@ module.exports = {
                     helper.database[msg.guild.id][tournament] = {}
 
                 if (!helper.database[msg.guild.id][tournament].hasOwnProperty(stage)) {
-                    helper.database[msg.guild.id][tournament][stage] = []
+                    helper.database[msg.guild.id][tournament][stage] = {
+                        maps: []
+                    }
                     helper.active_stage[msg.guild.id] = [tournament, stage]
                 }
 
@@ -113,10 +117,10 @@ module.exports = {
                     let beatmap = response.data[0];
                     let map = `${beatmap["artist"]} - ${beatmap["title"]} [${beatmap["version"]}]`;
 
-                    if (helper.database[msg.guild.id][tournament][stage].find(m => m["id"] === beatmap_id))
+                    if (helper.database[msg.guild.id][tournament][stage]["maps"].find(m => m["id"] === beatmap_id))
                         reject(`This map is already in pool!`)
 
-                    helper.database[msg.guild.id][tournament][stage].push({
+                    helper.database[msg.guild.id][tournament][stage]["maps"].push({
                         id: beatmap_id,
                         mapset_id: beatmap["beatmapset_id"],
                         map,
@@ -161,9 +165,9 @@ module.exports = {
 
                             let beatmap = response.data[0];
                             let map = `${beatmap["artist"]} - ${beatmap["title"]} [${beatmap["version"]}]`;
-                            let mapIndex = helper.database[msg.guild.id][tournament][stage].findIndex(m => m["id"] === beatmap_id);
+                            let mapIndex = helper.database[msg.guild.id][tournament][stage]["maps"].findIndex(m => m["id"] === beatmap_id);
                             if (mapIndex > -1) {
-                                helper.database[msg.guild.id][tournament][stage].splice(mapIndex, 1);
+                                helper.database[msg.guild.id][tournament][stage]["maps"].splice(mapIndex, 1);
                                 resolve({
                                     embed: {
                                         color: [255, 0, 0],
@@ -233,7 +237,7 @@ module.exports = {
                 if(stage) {
                     if (helper.database[msg.guild.id][tournament]
                         && helper.database[msg.guild.id][tournament][stage]) {
-                        helper.database[msg.guild.id][tournament][stage].forEach(map => {
+                        helper.database[msg.guild.id][tournament][stage]["maps"].forEach(map => {
                             let best = map["scores"].length > 0 ? map["scores"].sort((a,b) => {return b["score"]-a["score"]})[0] : 0;
                             let highScore = best["score"] > 0 ? `- **${best["score"]}** by **${best["player"]}**` : "";
                             description += `\n • [${map["map"]}](https://osu.ppy.sh/b/${map["id"]}) ${highScore}`;
@@ -251,7 +255,7 @@ module.exports = {
                 else if (!stage && tournament) {
                     if (helper.database[msg.guild.id][tournament]) {
                         Object.keys(helper.database[msg.guild.id][tournament]).forEach(stage => {
-                            description += `\n ⮞ **${stage}** - Total of **${helper.database[msg.guild.id][tournament][stage].length}** maps.`;
+                            description += `\n ⮞ **${stage}** - Total of **${helper.database[msg.guild.id][tournament][stage]["maps"].length}** maps.`;
                         })
                         resolve({
                             embed: {
@@ -370,7 +374,7 @@ module.exports = {
 
                 if (helper.database[msg.guild.id][tournament]
                     && helper.database[msg.guild.id][tournament][stage]) {
-                    helper.database[msg.guild.id][tournament][stage].forEach(map => {
+                    helper.database[msg.guild.id][tournament][stage]["maps"].forEach(map => {
                         let best = map["scores"].length > 0 ? map["scores"].sort((a,b) => {return b["score"]-a["score"]})[0] : 0;
                         let highScore = best["score"] > 0 ? `- **${best["score"]}** by **${best["player"]}**` : "";
                         description += `\n • [${map["map"]}](https://osu.ppy.sh/b/${map["id"]}) ${highScore}`;

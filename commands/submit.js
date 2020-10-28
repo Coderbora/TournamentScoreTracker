@@ -182,7 +182,7 @@ module.exports = {
                             reject("Failed to read your score. " +
                                 "Please upload your replay instead of uploading screenshot.")
 
-                        let similar_map = helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]]
+                        let similar_map = helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]]["maps"]
                             .slice(0).sort((a, b) => {
                                     return stringSimilarity.compareTwoStrings(b["map"], data.map)
                                         - stringSimilarity.compareTwoStrings(a["map"], data.map)
@@ -214,7 +214,7 @@ module.exports = {
                             data.map = `${map["artist"]} - ${map["title"]} [${map["version"]}]`;
                             data.id = map["beatmap_id"];
 
-                            if(!helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]].find(m => m["id"] === data.id))
+                            if(!helper.database[msg.guild.id][guild_stage[0]][guild_stage[1]]["maps"].find(m => m["id"] === data.id))
                                 reject(`Failed to find this map in mappool.`)
 
                             resolve(formatResolve(data, msg, config, helper))
