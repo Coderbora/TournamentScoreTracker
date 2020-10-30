@@ -13,7 +13,7 @@ module.exports = {
             let guild_stage = helper.active_stage[msg.guild.id];
 
             let mp_url = argv[1];
-            let player_ignore_array = argv.slice(2);
+            let player_ignore_array = argv.slice(2).map(p => p.toString().toLowerCase());
             if(!mp_url || !helper.validURL(mp_url) || !helper.parse_multiplayer_id(mp_url))
                 reject("Please enter mp url correctly.")
             else if(!guild_stage)
@@ -39,7 +39,8 @@ module.exports = {
                                         })
                                     } else resolve()
                                 })).then(() => {
-                                    if(!player_ignore_array.includes(users[score["user_id"]]))
+                                    if(!player_ignore_array.includes(users[score["user_id"]].toString()
+                                        .toLowerCase()))
                                         score_promises.push(helper.add_score(msg, {
                                             id: Number(game["beatmap_id"]),
                                             player: users[score["user_id"]],
