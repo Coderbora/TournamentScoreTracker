@@ -80,6 +80,16 @@ module.exports = {
 
     },
 
+    validURL(str) {
+        let pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
+            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+            '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+            '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+            '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
+        return !!pattern.test(str);
+    },
+
     parse_beatmap_url: function(beatmap_url){
         if(beatmap_url.startsWith('<') && beatmap_url.endsWith('>'))
             beatmap_url = beatmap_url.substring(1, beatmap_url.length - 1);
@@ -98,6 +108,19 @@ module.exports = {
             beatmap_id = parseInt(beatmap_url);
 
         return beatmap_id;
+    },
+
+    parse_multiplayer_id: function(mp_url){
+        let mp_id = false;
+
+        if(mp_url.includes("/matches/"))
+            mp_id = parseInt(mp_url.split("/matches/").pop());
+        else if(mp_url.includes("/mp/"))
+            mp_id = parseInt(mp_url.split("/mp/").pop());
+        else if(parseInt(mp_url) === mp_url)
+            mp_id = parseInt(mp_url);
+
+        return mp_id;
     },
 
     add_score(msg, data) {
@@ -130,6 +153,14 @@ module.exports = {
 
     get_beatmap(req) {
         return osu_api.get("/get_beatmaps", { params: req })
+    },
+
+    get_user(req) {
+        return osu_api.get("/get_user", { params: req })
+    },
+
+    get_multiplayer(req) {
+        return osu_api.get("/get_match", { params: req })
     },
 
     get_all_commands() {

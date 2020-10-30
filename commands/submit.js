@@ -22,16 +22,6 @@ const default_settings = {
     }
 }
 
-function validURL(str) {
-    let pattern = new RegExp('^(https?:\\/\\/)?' + // protocol
-        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-        '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-        '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-        '(\\#[-a-z\\d_]*)?$', 'i'); // fragment locator
-    return !!pattern.test(str);
-}
-
 function scaleRectangles(settings, w, h) {
     const ratio = [w / settings.dimensions[0], h / settings.dimensions[1]];
 
@@ -149,7 +139,7 @@ module.exports = {
                 reject("Please set an active stage.")
 
             if ((msg.attachments.size > 0 && msg.attachments.first().name.match(/[^/]+(jpg|jpeg|png)$/))
-                || (argv[1] && validURL(argv[1]))) {
+                || (argv[1] && helper.validURL(argv[1]))) {
                 let url;
 
                 if (msg.attachments.size > 0)
